@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lyrra API — Architecture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #22263a;
+      --border: #2e3350;
+      --accent: #6c8cff;
+      --accent-dim: #3a4a8a;
+      --green: #4ade80;
+      --yellow: #facc15;
+      --red: #f87171;
+      --cyan: #22d3ee;
+      --purple: #c084fc;
+      --text: #e2e8f0;
+      --text-muted: #8892a4;
+      --text-dim: #545e73;
+      --method-get: #4ade80;
+      --method-post: #60a5fa;
+      --method-delete: #f87171;
+      --method-patch: #fb923c;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 28px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .sidebar-logo h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .sidebar-logo .version {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      margin-top: 2px;
+    }
+
+    .sidebar-section {
+      padding: 6px 20px 2px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      margin-top: 10px;
+    }
+
+    .sidebar-link {
+      display: block;
+      padding: 7px 20px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .sidebar-link:hover {
+      color: var(--text);
+      background: var(--surface-2);
+    }
+
+    .sidebar-link.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      background: rgba(108, 140, 255, 0.08);
+    }
+
+    .sidebar-link .badge {
+      float: right;
+      font-size: 10px;
+      font-family: var(--mono);
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--surface-2);
+      color: var(--text-dim);
+    }
+
+    /* ── Main ── */
+    .main {
+      padding: 48px 56px;
+      max-width: 920px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 52px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 24px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .hero-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .hero-meta-item .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    .hero-meta-item .dot.yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+    .hero-meta-item .dot.cyan   { background: var(--cyan);   box-shadow: 0 0 6px var(--cyan); }
+
+    .hero-meta-item strong { color: var(--text); }
+
+    /* ── Sections ── */
+    .section {
+      margin-bottom: 60px;
+      scroll-margin-top: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .section-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .section-icon.red    { background: rgba(248, 113, 113, 0.12); }
+    .section-icon.blue   { background: rgba(96, 165, 250, 0.12); }
+    .section-icon.purple { background: rgba(192, 132, 252, 0.12); }
+    .section-icon.cyan   { background: rgba(34, 211, 238, 0.12); }
+    .section-icon.green  { background: rgba(74, 222, 128, 0.12); }
+
+    .section-title h2 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .section-title p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ── Info grid ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+
+    .info-card .label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 13px;
+      font-family: var(--mono);
+      color: var(--text);
+    }
+
+    /* ── API endpoints ── */
+    .endpoint {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .endpoint-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .endpoint-header:hover {
+      background: var(--surface-2);
+    }
+
+    .method {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      min-width: 56px;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    .method.GET    { background: rgba(74,222,128,0.15);   color: var(--method-get); }
+    .method.POST   { background: rgba(96,165,250,0.15);   color: var(--method-post); }
+    .method.DELETE { background: rgba(248,113,113,0.15);  color: var(--method-delete); }
+    .method.PATCH  { background: rgba(251,146,60,0.15);   color: var(--method-patch); }
+
+    .endpoint-path {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .endpoint-path .param {
+      color: var(--accent);
+    }
+
+    .endpoint-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .endpoint-body {
+      border-top: 1px solid var(--border);
+      padding: 18px 18px 20px;
+    }
+
+    .endpoint-body p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+
+    /* ── Tables ── */
+    .param-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      margin-bottom: 16px;
+    }
+
+    .param-table th {
+      text-align: left;
+      padding: 7px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .param-table td {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .param-table tr:hover td {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .param-table td:first-child {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .param-table td:nth-child(2) {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--purple);
+    }
+
+    .param-table td:nth-child(3) {
+      color: var(--text-muted);
+    }
+
+    .required-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(248,113,113,0.15);
+      color: var(--red);
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    .optional-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.05);
+      color: var(--text-dim);
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    /* ── Code blocks ── */
+    .code-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+
+    pre {
+      background: #0b0d14;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+
+    pre .key    { color: var(--accent); }
+    pre .str    { color: var(--green); }
+    pre .num    { color: var(--yellow); }
+    pre .bool   { color: var(--purple); }
+    pre .null   { color: var(--text-dim); }
+    pre .url    { color: var(--cyan); }
+    pre .comment { color: var(--text-dim); font-style: italic; }
+
+    /* ── Status codes ── */
+    .status-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .status-chip {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .status-chip.ok      { background: rgba(74,222,128,0.12); color: var(--green); }
+    .status-chip.created { background: rgba(96,165,250,0.12); color: var(--method-post); }
+    .status-chip.no-content { background: rgba(255,255,255,0.06); color: var(--text-dim); }
+    .status-chip.bad     { background: rgba(251,146,60,0.12);  color: #fb923c; }
+    .status-chip.not-found { background: rgba(248,113,113,0.12); color: var(--red); }
+    .status-chip.error   { background: rgba(248,113,113,0.12); color: var(--red); }
+    .status-chip.redirect { background: rgba(192,132,252,0.12); color: var(--purple); }
+
+    /* ── Infrastructure section ── */
+    .infra-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .infra-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .infra-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .infra-card-icon {
+      font-size: 20px;
+    }
+
+    .infra-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .infra-card ul {
+      list-style: none;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+
+    .infra-card ul li::before {
+      content: '·  ';
+      color: var(--text-dim);
+    }
+
+    /* ── DB schema ── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .table-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-name {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .table-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .schema-table th {
+      text-align: left;
+      padding: 6px 14px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .schema-table td {
+      padding: 7px 14px;
+      border-bottom: 1px solid rgba(46,51,80,0.5);
+      vertical-align: middle;
+    }
+
+    .schema-table tr:last-child td { border-bottom: none; }
+
+    .col-name {
+      font-family: var(--mono);
+      color: var(--text);
+    }
+
+    .col-name .pk {
+      font-size: 9px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(250,204,21,0.15);
+      color: var(--yellow);
+      margin-left: 5px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .col-name .fk {
+      font-size: 9px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(108,140,255,0.15);
+      color: var(--accent);
+      margin-left: 5px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .col-type {
+      font-family: var(--mono);
+      color: var(--purple);
+      font-size: 11px;
+    }
+
+    .col-desc {
+      color: var(--text-muted);
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 48px 0;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <h1>Lyrra API</h1>
+      <div class="version">v0.2.0 · FastAPI</div>
+    </div>
+
+    <div class="sidebar-section">Overview</div>
+    <a class="sidebar-link active" href="#overview">Introduction</a>
+    <a class="sidebar-link" href="#infrastructure">Infrastructure</a>
+    <a class="sidebar-link" href="#database">Database Schema</a>
+
+    <div class="sidebar-section">Domains</div>
+    <a class="sidebar-link" href="#youtube">YouTube <span class="badge">2</span></a>
+    <a class="sidebar-link" href="#videos">Videos <span class="badge">1</span></a>
+    <a class="sidebar-link" href="#subtitles">Subtitles <span class="badge">3</span></a>
+    <a class="sidebar-link" href="#health">Health <span class="badge">1</span></a>
+  </nav>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <!-- ── Hero ── -->
+    <div class="hero" id="overview">
+      <h1>Lyrra <span>API</span> Architecture</h1>
+      <p>
+        A FastAPI service for YouTube audio translation and video subtitle management.
+        It accepts YouTube URLs, transcribes and translates speech with OpenAI Whisper,
+        and stores structured results for fast retrieval and subtitle delivery.
+      </p>
+      <div class="hero-meta">
+        <div class="hero-meta-item">
+          <span class="dot"></span>
+          <span><strong>FastAPI</strong> · Python 3.9+</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="dot cyan"></span>
+          <span><strong>PostgreSQL</strong> · SQLAlchemy ORM</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="dot yellow"></span>
+          <span><strong>OpenAI Whisper</strong> · Audio transcription</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Infrastructure ── -->
+    <div class="section" id="infrastructure">
+      <div class="section-header">
+        <div class="section-icon cyan">⚙️</div>
+        <div class="section-title">
+          <h2>Infrastructure</h2>
+          <p>Core services and external dependencies</p>
+        </div>
+      </div>
+
+      <div class="infra-grid">
+        <div class="infra-card">
+          <div class="infra-card-header">
+            <span class="infra-card-icon">⚡</span>
+            <h3>Web Framework</h3>
+          </div>
+          <ul>
+            <li>FastAPI (ASGI)</li>
+            <li>Uvicorn server</li>
+            <li>CORS for localhost:3000</li>
+            <li>HTTP request logging middleware</li>
+          </ul>
+        </div>
+
+        <div class="infra-card">
+          <div class="infra-card-header">
+            <span class="infra-card-icon">🗄️</span>
+            <h3>Database</h3>
+          </div>
+          <ul>
+            <li>PostgreSQL</li>
+            <li>SQLAlchemy ORM</li>
+            <li>Alembic migrations</li>
+            <li>Auto-create tables on startup</li>
+          </ul>
+        </div>
+
+        <div class="infra-card">
+          <div class="infra-card-header">
+            <span class="infra-card-icon">🤖</span>
+            <h3>AI / Transcription</h3>
+          </div>
+          <ul>
+            <li>OpenAI Whisper API</li>
+            <li>Model: whisper-1 (default)</li>
+            <li>Word-level timestamps</li>
+            <li>Auto-detects source language</li>
+          </ul>
+        </div>
+
+        <div class="infra-card">
+          <div class="infra-card-header">
+            <span class="infra-card-icon">📥</span>
+            <h3>Audio Pipeline</h3>
+          </div>
+          <ul>
+            <li>yt-dlp for YouTube download</li>
+            <li>ffmpeg for audio extraction</li>
+            <li>Output: MP3 at 192kbps</li>
+            <li>Temp dir, cleaned after use</li>
+          </ul>
+        </div>
+
+        <div class="infra-card">
+          <div class="infra-card-header">
+            <span class="infra-card-icon">📦</span>
+            <h3>File Storage</h3>
+          </div>
+          <ul>
+            <li>Local filesystem (default)</li>
+            <li>AWS S3 (configurable)</li>
+            <li>Served via /files static mount</li>
+            <li>Pluggable StorageAdapter</li>
+          </ul>
+        </div>
+
+        <div class="infra-card">
+          <div class="infra-card-header">
+            <span class="infra-card-icon">💾</span>
+            <h3>Transcription Cache</h3>
+          </div>
+          <ul>
+            <li>JSON files on disk</li>
+            <li>{video_id}.json per video</li>
+            <li>{video_id}_sentences.json</li>
+            <li>Checked before calling Whisper</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ── Database Schema ── -->
+    <div class="section" id="database">
+      <div class="section-header">
+        <div class="section-icon cyan">🗃️</div>
+        <div class="section-title">
+          <h2>Database Schema</h2>
+          <p>PostgreSQL tables managed via Alembic migrations</p>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header">
+          <span class="table-name">videos</span>
+          <span class="table-desc">Source YouTube videos and cached Whisper results</span>
+        </div>
+        <table class="schema-table">
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-name">id <span class="pk">PK</span></td><td class="col-type">VARCHAR(255)</td><td class="col-desc">YouTube video ID (e.g. dQw4w9WgXcQ)</td></tr>
+            <tr><td class="col-name">title</td><td class="col-type">VARCHAR(255)</td><td class="col-desc">Video title from yt-dlp metadata</td></tr>
+            <tr><td class="col-name">duration_ms</td><td class="col-type">INTEGER</td><td class="col-desc">Video duration in milliseconds</td></tr>
+            <tr><td class="col-name">source_url</td><td class="col-type">VARCHAR(500)</td><td class="col-desc">Original YouTube URL</td></tr>
+            <tr><td class="col-name">default_lang</td><td class="col-type">VARCHAR(5)</td><td class="col-desc">Default language code (default: en)</td></tr>
+            <tr><td class="col-name">translated_language</td><td class="col-type">VARCHAR(5)</td><td class="col-desc">Source language detected by Whisper</td></tr>
+            <tr><td class="col-name">translated_text</td><td class="col-type">TEXT</td><td class="col-desc">Full translated transcript text</td></tr>
+            <tr><td class="col-name">translated_segments</td><td class="col-type">JSONB</td><td class="col-desc">Word-level timestamp segments array</td></tr>
+            <tr><td class="col-name">created_at</td><td class="col-type">DATETIME</td><td class="col-desc">Row creation timestamp</td></tr>
+            <tr><td class="col-name">updated_at</td><td class="col-type">DATETIME</td><td class="col-desc">Last update timestamp</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header">
+          <span class="table-name">subtitle_tracks</span>
+          <span class="table-desc">Uploaded subtitle files per video and language</span>
+        </div>
+        <table class="schema-table">
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-name">id <span class="pk">PK</span></td><td class="col-type">BIGINT</td><td class="col-desc">Auto-increment primary key</td></tr>
+            <tr><td class="col-name">video_id <span class="fk">FK</span></td><td class="col-type">VARCHAR(255)</td><td class="col-desc">References videos.id (CASCADE DELETE)</td></tr>
+            <tr><td class="col-name">language_code</td><td class="col-type">VARCHAR(5)</td><td class="col-desc">BCP-47 language tag (e.g. en, ko, ja)</td></tr>
+            <tr><td class="col-name">format</td><td class="col-type">VARCHAR(10)</td><td class="col-desc">File format — vtt (default) or srt</td></tr>
+            <tr><td class="col-name">file_url</td><td class="col-type">VARCHAR(500)</td><td class="col-desc">Public URL to the stored subtitle file</td></tr>
+            <tr><td class="col-name">file_size_bytes</td><td class="col-type">INTEGER</td><td class="col-desc">File size in bytes</td></tr>
+            <tr><td class="col-name">is_machine_translated</td><td class="col-type">BOOLEAN</td><td class="col-desc">True if generated by AI/Whisper</td></tr>
+            <tr><td class="col-name">status</td><td class="col-type">VARCHAR(20)</td><td class="col-desc">Track status (published, etc.)</td></tr>
+            <tr><td class="col-name">created_at</td><td class="col-type">DATETIME</td><td class="col-desc">Row creation timestamp</td></tr>
+            <tr><td class="col-name">updated_at</td><td class="col-type">DATETIME</td><td class="col-desc">Last update timestamp</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ══════════════════════════════════════
+         DOMAIN: YouTube
+    ══════════════════════════════════════ -->
+    <div class="section" id="youtube">
+      <div class="section-header">
+        <div class="section-icon red">▶️</div>
+        <div class="section-title">
+          <h2>YouTube Domain</h2>
+          <p>Audio download, Whisper transcription/translation, and sentence segmentation</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-muted); margin-bottom:24px; font-size:13px; line-height:1.8;">
+        The YouTube domain handles the core language-learning pipeline: it accepts a YouTube URL,
+        downloads the audio via <strong>yt-dlp</strong>, sends it to the <strong>OpenAI Whisper API</strong>
+        for transcription and translation to English, then persists the result to disk as JSON.
+        On subsequent requests for the same video, the cached result is returned immediately without
+        re-downloading or re-transcribing.
+      </p>
+
+      <!-- POST /youtube/translate -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method POST">POST</span>
+          <span class="endpoint-path">/youtube/translate</span>
+          <span class="endpoint-desc">Translate a YouTube video to English</span>
+        </div>
+        <div class="endpoint-body">
+          <p>
+            Accepts a YouTube URL and optional Whisper settings. If the video has already been
+            processed, returns the cached result immediately. Otherwise, downloads the audio, runs
+            Whisper translation (always targeting English output), persists words and sentence
+            segmentation to disk, and returns the full transcript.
+          </p>
+
+          <div class="code-label">Request body</div>
+          <table class="param-table">
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>youtube_url <span class="required-badge">required</span></td><td>string (URL)</td><td>Any valid YouTube URL — watch, shorts, embed, or youtu.be</td></tr>
+              <tr><td>model <span class="optional-badge">optional</span></td><td>string</td><td>Whisper model name. Default: <code>whisper-1</code></td></tr>
+              <tr><td>source_language <span class="optional-badge">optional</span></td><td>string | null</td><td>Hint the source language (e.g. <code>ko</code>, <code>ja</code>). Whisper auto-detects if omitted.</td></tr>
+              <tr><td>include_words <span class="optional-badge">optional</span></td><td>boolean</td><td>Include word-level timestamps in response. Default: <code>true</code></td></tr>
+            </tbody>
+          </table>
+
+          <div class="code-label">Example request</div>
+          <pre>{
+  <span class="key">"youtube_url"</span>: <span class="str">"https://www.youtube.com/watch?v=dQw4w9WgXcQ"</span>,
+  <span class="key">"model"</span>: <span class="str">"whisper-1"</span>,
+  <span class="key">"source_language"</span>: <span class="null">null</span>,
+  <span class="key">"include_words"</span>: <span class="bool">true</span>
+}</pre>
+
+          <div class="code-label">Response · 200 OK</div>
+          <pre>{
+  <span class="key">"title"</span>: <span class="str">"Video Title"</span>,
+  <span class="key">"video_id"</span>: <span class="str">"dQw4w9WgXcQ"</span>,
+  <span class="key">"source_language"</span>: <span class="str">"ko"</span>,
+  <span class="key">"translated_text"</span>: <span class="str">"Full translated English transcript..."</span>,
+  <span class="key">"words"</span>: [
+    { <span class="key">"word"</span>: <span class="str">"Hello"</span>, <span class="key">"start"</span>: <span class="num">0.0</span>, <span class="key">"end"</span>: <span class="num">0.48</span> },
+    { <span class="key">"word"</span>: <span class="str">"world"</span>, <span class="key">"start"</span>: <span class="num">0.52</span>, <span class="key">"end"</span>: <span class="num">1.1</span> }
+  ]
+}</pre>
+
+          <div class="status-chips">
+            <span class="status-chip ok">200 Translated / cached</span>
+            <span class="status-chip bad">400 YouTube download failed</span>
+            <span class="status-chip error">500 ffmpeg missing / Whisper error</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- GET /youtube/transcribe/{video_id}/sentences -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method GET">GET</span>
+          <span class="endpoint-path">/youtube/transcribe/<span class="param">{video_id}</span>/sentences</span>
+          <span class="endpoint-desc">Get sentence-segmented transcript</span>
+        </div>
+        <div class="endpoint-body">
+          <p>
+            Returns the cached transcription broken into natural sentences with start/end
+            timestamps and per-word timing. Sentences are split on terminal punctuation
+            (<code>.</code> <code>!</code> <code>?</code>) and words are aligned to the
+            Whisper word-level output. Returns 404 if the video has not been transcribed yet.
+          </p>
+
+          <div class="code-label">Path parameters</div>
+          <table class="param-table">
+            <thead>
+              <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>video_id <span class="required-badge">required</span></td><td>string</td><td>YouTube video ID (e.g. <code>dQw4w9WgXcQ</code>)</td></tr>
+            </tbody>
+          </table>
+
+          <div class="code-label">Response · 200 OK</div>
+          <pre>{
+  <span class="key">"video_id"</span>: <span class="str">"dQw4w9WgXcQ"</span>,
+  <span class="key">"language"</span>: <span class="str">"ko"</span>,
+  <span class="key">"sentences"</span>: [
+    {
+      <span class="key">"text"</span>: <span class="str">"Hello, this is the first sentence."</span>,
+      <span class="key">"start"</span>: <span class="num">0.0</span>,
+      <span class="key">"end"</span>: <span class="num">2.5</span>,
+      <span class="key">"words"</span>: [
+        { <span class="key">"word"</span>: <span class="str">"Hello,"</span>, <span class="key">"start"</span>: <span class="num">0.0</span>, <span class="key">"end"</span>: <span class="num">0.48</span> }
+      ]
+    }
+  ]
+}</pre>
+
+          <div class="status-chips">
+            <span class="status-chip ok">200 Sentences returned</span>
+            <span class="status-chip not-found">404 Video not yet transcribed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ══════════════════════════════════════
+         DOMAIN: Videos
+    ══════════════════════════════════════ -->
+    <div class="section" id="videos">
+      <div class="section-header">
+        <div class="section-icon blue">🎬</div>
+        <div class="section-title">
+          <h2>Videos Domain</h2>
+          <p>Retrieve stored video records with their associated subtitle tracks</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-muted); margin-bottom:24px; font-size:13px; line-height:1.8;">
+        The Videos domain exposes read access to the <code>videos</code> table. A video record
+        is created automatically when a YouTube translation is first processed. The response
+        includes the full list of associated subtitle tracks as a nested array.
+      </p>
+
+      <!-- GET /videos/{video_id} -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method GET">GET</span>
+          <span class="endpoint-path">/videos/<span class="param">{video_id}</span></span>
+          <span class="endpoint-desc">Fetch a video by ID with its subtitle tracks</span>
+        </div>
+        <div class="endpoint-body">
+          <p>
+            Returns the stored video record identified by its YouTube video ID. The response
+            includes metadata (title, duration, source URL, default language) and all
+            associated subtitle tracks. Returns 404 if the video has not been processed.
+          </p>
+
+          <div class="code-label">Path parameters</div>
+          <table class="param-table">
+            <thead>
+              <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>video_id <span class="required-badge">required</span></td><td>string</td><td>YouTube video ID (e.g. <code>dQw4w9WgXcQ</code>)</td></tr>
+            </tbody>
+          </table>
+
+          <div class="code-label">Response · 200 OK</div>
+          <pre>{
+  <span class="key">"id"</span>: <span class="str">"dQw4w9WgXcQ"</span>,
+  <span class="key">"title"</span>: <span class="str">"Video Title"</span>,
+  <span class="key">"duration_ms"</span>: <span class="num">212000</span>,
+  <span class="key">"source_url"</span>: <span class="str">"https://www.youtube.com/watch?v=dQw4w9WgXcQ"</span>,
+  <span class="key">"default_lang"</span>: <span class="str">"en"</span>,
+  <span class="key">"created_at"</span>: <span class="str">"2026-05-13T10:00:00"</span>,
+  <span class="key">"updated_at"</span>: <span class="str">"2026-05-13T10:00:00"</span>,
+  <span class="key">"subtitle_tracks"</span>: [
+    {
+      <span class="key">"language_code"</span>: <span class="str">"ko"</span>,
+      <span class="key">"file_url"</span>: <span class="str">"http://localhost:8000/files/dQw4w9WgXcQ/ko.vtt"</span>,
+      <span class="key">"format"</span>: <span class="str">"vtt"</span>
+    }
+  ]
+}</pre>
+
+          <div class="status-chips">
+            <span class="status-chip ok">200 Video found</span>
+            <span class="status-chip not-found">404 Video not found</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ══════════════════════════════════════
+         DOMAIN: Subtitles
+    ══════════════════════════════════════ -->
+    <div class="section" id="subtitles">
+      <div class="section-header">
+        <div class="section-icon purple">📝</div>
+        <div class="section-title">
+          <h2>Subtitles Domain</h2>
+          <p>Upload, retrieve, and delete subtitle tracks (VTT/SRT) per video and language</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-muted); margin-bottom:24px; font-size:13px; line-height:1.8;">
+        The Subtitles domain manages subtitle files stored in the configured storage backend
+        (local filesystem or S3). Each subtitle track is uniquely identified by its
+        <code>video_id</code> + <code>language_code</code> pair. Files are stored under
+        a key derived from the video ID and language code, and the public URL is persisted
+        in the database. Retrieval issues a 302 redirect directly to the file URL.
+      </p>
+
+      <!-- POST /videos/{video_id}/subtitles -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method POST">POST</span>
+          <span class="endpoint-path">/videos/<span class="param">{video_id}</span>/subtitles</span>
+          <span class="endpoint-desc">Upload a subtitle track</span>
+        </div>
+        <div class="endpoint-body">
+          <p>
+            Accepts a <code>multipart/form-data</code> upload. Stores the subtitle file in the
+            configured storage backend, persists the track record in the database, and returns
+            the created track metadata. Uploading for an existing language replaces the track.
+          </p>
+
+          <div class="code-label">Form fields</div>
+          <table class="param-table">
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>file <span class="required-badge">required</span></td><td>file</td><td>Subtitle file content (VTT or SRT)</td></tr>
+              <tr><td>language_code <span class="required-badge">required</span></td><td>string</td><td>BCP-47 language code, e.g. <code>en</code>, <code>ko</code>, <code>ja</code></td></tr>
+              <tr><td>format <span class="optional-badge">optional</span></td><td>string</td><td>File format: <code>vtt</code> (default) or <code>srt</code></td></tr>
+            </tbody>
+          </table>
+
+          <div class="code-label">Example request</div>
+          <pre><span class="comment"># curl multipart upload</span>
+curl -X POST http://localhost:8000/videos/dQw4w9WgXcQ/subtitles \
+  -F <span class="str">"file=@subtitles_ko.vtt"</span> \
+  -F <span class="str">"language_code=ko"</span> \
+  -F <span class="str">"format=vtt"</span></pre>
+
+          <div class="code-label">Response · 200 OK</div>
+          <pre>{
+  <span class="key">"id"</span>: <span class="num">1</span>,
+  <span class="key">"video_id"</span>: <span class="str">"dQw4w9WgXcQ"</span>,
+  <span class="key">"language_code"</span>: <span class="str">"ko"</span>,
+  <span class="key">"format"</span>: <span class="str">"vtt"</span>,
+  <span class="key">"file_url"</span>: <span class="str">"http://localhost:8000/files/dQw4w9WgXcQ/ko.vtt"</span>,
+  <span class="key">"file_size_bytes"</span>: <span class="num">4096</span>,
+  <span class="key">"is_machine_translated"</span>: <span class="bool">false</span>,
+  <span class="key">"status"</span>: <span class="str">"published"</span>,
+  <span class="key">"created_at"</span>: <span class="str">"2026-05-13T10:00:00"</span>,
+  <span class="key">"updated_at"</span>: <span class="str">"2026-05-13T10:00:00"</span>
+}</pre>
+
+          <div class="status-chips">
+            <span class="status-chip ok">200 Track created / replaced</span>
+            <span class="status-chip not-found">404 Video not found</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- GET /videos/{video_id}/subtitles/{language_code} -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method GET">GET</span>
+          <span class="endpoint-path">/videos/<span class="param">{video_id}</span>/subtitles/<span class="param">{language_code}</span></span>
+          <span class="endpoint-desc">Redirect to subtitle file</span>
+        </div>
+        <div class="endpoint-body">
+          <p>
+            Looks up the subtitle track for the given video and language, then issues a
+            <strong>302 redirect</strong> to the file's public URL. The client follows the
+            redirect and downloads the subtitle file directly from storage. Returns 404 if
+            no track exists for that combination.
+          </p>
+
+          <div class="code-label">Path parameters</div>
+          <table class="param-table">
+            <thead>
+              <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>video_id <span class="required-badge">required</span></td><td>string</td><td>YouTube video ID</td></tr>
+              <tr><td>language_code <span class="required-badge">required</span></td><td>string</td><td>Language code matching a stored track</td></tr>
+            </tbody>
+          </table>
+
+          <div class="status-chips">
+            <span class="status-chip redirect">302 Redirect to file URL</span>
+            <span class="status-chip not-found">404 Track not found</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELETE /videos/{video_id}/subtitles/{language_code} -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method DELETE">DELETE</span>
+          <span class="endpoint-path">/videos/<span class="param">{video_id}</span>/subtitles/<span class="param">{language_code}</span></span>
+          <span class="endpoint-desc">Delete a subtitle track</span>
+        </div>
+        <div class="endpoint-body">
+          <p>
+            Deletes both the stored subtitle file from the storage backend and the
+            corresponding database record. Idempotent — if the file does not exist in
+            storage the record is still removed. Returns 204 No Content on success.
+          </p>
+
+          <div class="code-label">Path parameters</div>
+          <table class="param-table">
+            <thead>
+              <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>video_id <span class="required-badge">required</span></td><td>string</td><td>YouTube video ID</td></tr>
+              <tr><td>language_code <span class="required-badge">required</span></td><td>string</td><td>Language code of the track to delete</td></tr>
+            </tbody>
+          </table>
+
+          <div class="status-chips">
+            <span class="status-chip no-content">204 Deleted</span>
+            <span class="status-chip not-found">404 Track not found</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ══════════════════════════════════════
+         DOMAIN: Health
+    ══════════════════════════════════════ -->
+    <div class="section" id="health">
+      <div class="section-header">
+        <div class="section-icon green">💚</div>
+        <div class="section-title">
+          <h2>Health</h2>
+          <p>Liveness probe for monitoring and load balancers</p>
+        </div>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method GET">GET</span>
+          <span class="endpoint-path">/health</span>
+          <span class="endpoint-desc">Liveness check</span>
+        </div>
+        <div class="endpoint-body">
+          <p>Returns a static <code>{"status": "ok"}</code> JSON response. No database or
+          external service check is performed — this is a pure liveness probe.</p>
+
+          <div class="code-label">Response · 200 OK</div>
+          <pre>{ <span class="key">"status"</span>: <span class="str">"ok"</span> }</pre>
+
+          <div class="status-chips">
+            <span class="status-chip ok">200 Service is up</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Testing & type checking
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Data & uploads
+data/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+.zed/
+
+# Credentials & keys
+*.pem
+*.key
+*.p12
+*.pfx
+service_account.json
+credentials.json
+token.json
+gcloud/
+
+# Logs
+*.log
+logs/
