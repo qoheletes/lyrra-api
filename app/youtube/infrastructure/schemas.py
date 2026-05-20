@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, HttpUrl
 
-from app.youtube.sentences import Sentence, SentenceWord  # noqa: F401 — re-exported
+from app.youtube.domain.sentences import Sentence, SentenceWord  # noqa: F401 — re-exported
 
 
 class YouTubeTranslateRequest(BaseModel):

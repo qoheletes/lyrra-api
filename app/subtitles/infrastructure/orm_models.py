@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from app.core.database import Base
 
 if TYPE_CHECKING:
-    from app.videos.models import Video
+    from app.videos.infrastructure.orm_models import VideoORM
 
 
-class SubtitleTrack(Base):
+class SubtitleTrackORM(Base):
     __tablename__ = "subtitle_tracks"
     __table_args__ = (
         UniqueConstraint("video_id", "language_code", name="uq_subtitle_tracks_video_lang"),
@@ -20,7 +20,9 @@ class SubtitleTrack(Base):
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    video_id: Mapped[str] = mapped_column(String(255), ForeignKey("videos.id", ondelete="CASCADE"), nullable=False)
+    video_id: Mapped[str] = mapped_column(
+        String(255), ForeignKey("videos.id", ondelete="CASCADE"), nullable=False
+    )
     language_code: Mapped[str] = mapped_column(String(5), nullable=False)
     format: Mapped[str] = mapped_column(String(10), nullable=False, default="json")
     file_url: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -32,4 +34,4 @@ class SubtitleTrack(Base):
         DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    video: Mapped[Video] = relationship("Video", back_populates="subtitle_tracks")
+    video: Mapped["VideoORM"] = relationship("VideoORM", back_populates="subtitle_tracks")

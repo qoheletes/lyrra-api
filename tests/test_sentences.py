@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.youtube.sentences import build_sentences
+from app.youtube.domain.sentences import build_sentences
 
 TRANSCRIPTION_FILE = Path(__file__).parent.parent / "data" / "transcriptions" / "rkd-pdjVZVM.json"
 
@@ -116,7 +116,7 @@ FAKE_TRANSCRIPTION = {
 
 
 def test_endpoint_returns_sentences():
-    with patch("app.youtube.router.get_cached_transcription", return_value=FAKE_TRANSCRIPTION):
+    with patch("app.youtube.infrastructure.router.get_cached_transcription", return_value=FAKE_TRANSCRIPTION):
         resp = client.get("/youtube/transcribe/abc123/sentences")
 
     assert resp.status_code == 200
@@ -127,7 +127,7 @@ def test_endpoint_returns_sentences():
 
 
 def test_endpoint_sentence_shape():
-    with patch("app.youtube.router.get_cached_transcription", return_value=FAKE_TRANSCRIPTION):
+    with patch("app.youtube.infrastructure.router.get_cached_transcription", return_value=FAKE_TRANSCRIPTION):
         resp = client.get("/youtube/transcribe/abc123/sentences")
 
     first = resp.json()["sentences"][0]
@@ -139,7 +139,7 @@ def test_endpoint_sentence_shape():
 
 
 def test_endpoint_404_on_missing_video():
-    with patch("app.youtube.router.get_cached_transcription", return_value=None):
+    with patch("app.youtube.infrastructure.router.get_cached_transcription", return_value=None):
         resp = client.get("/youtube/transcribe/does-not-exist/sentences")
 
     assert resp.status_code == 404

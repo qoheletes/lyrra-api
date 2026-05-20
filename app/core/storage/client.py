@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
 
-from app.config import settings
-from app.storage.exceptions import StorageError
+from app.core.config import settings
+from app.core.storage.exceptions import StorageError
 
 
 class StorageAdapter(ABC):

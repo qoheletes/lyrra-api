@@ -599,6 +599,8 @@
 
     <div class="sidebar-section">Overview</div>
     <a class="sidebar-link active" href="#overview">Introduction</a>
+    <a class="sidebar-link" href="#architecture">Architecture</a>
+    <a class="sidebar-link" href="#dependencies">Dependencies</a>
     <a class="sidebar-link" href="#infrastructure">Infrastructure</a>
     <a class="sidebar-link" href="#database">Database Schema</a>
 
@@ -635,6 +637,210 @@
         </div>
       </div>
     </div>
+
+    <!-- ── Architecture ── -->
+    <div class="section" id="architecture">
+      <div class="section-header">
+        <div class="section-icon blue">🏛️</div>
+        <div class="section-title">
+          <h2>Architecture</h2>
+          <p>Clean / Hexagonal — domain · application · infrastructure per module</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-muted); margin-bottom:24px; font-size:13px; line-height:1.8;">
+        Each feature module is vertically sliced into three layers. The dependency arrow always
+        points <strong>inward</strong> — infrastructure knows about application, application knows
+        about domain, domain knows about nothing.
+      </p>
+
+      <!-- Layer cards -->
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:28px;">
+        <div style="background:rgba(74,222,128,0.07); border:1px solid rgba(74,222,128,0.25); border-radius:var(--radius); padding:18px;">
+          <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--green); margin-bottom:8px;">Domain</div>
+          <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text);">Pure Python</div>
+          <ul style="list-style:none; font-size:12px; color:var(--text-muted); line-height:2;">
+            <li style="display:flex; gap:6px;"><span style="color:var(--text-dim)">·</span><span><code>models.py</code> — <code>@dataclass</code> entities</span></li>
+            <li style="display:flex; gap:6px;"><span style="color:var(--text-dim)">·</span><span><code>exceptions.py</code> — plain <code>Exception</code></span></li>
+            <li style="display:flex; gap:6px;"><span style="color:var(--text-dim)">·</span><span><code>sentences.py</code> — pure algorithm (youtube)</span></li>
+          </ul>
+          <div style="margin-top:10px; font-size:11px; color:var(--text-dim);">No framework imports</div>
+        </div>
+        <div style="background:rgba(108,140,255,0.07); border:1px solid rgba(108,140,255,0.25); border-radius:var(--radius); padding:18px;">
+          <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--accent); margin-bottom:8px;">Application</div>
+          <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text);">Orchestration</div>
+          <ul style="list-style:none; font-size:12px; color:var(--text-muted); line-height:2;">
+            <li style="display:flex; gap:6px;"><span style="color:var(--text-dim)">·</span><span><code>use_cases.py</code> — classes with <code>execute()</code></span></li>
+            <li style="display:flex; gap:6px;"><span style="color:var(--text-dim)">·</span><span><code>ports.py</code> — <code>typing.Protocol</code> adapters</span></li>
+          </ul>
+          <div style="margin-top:10px; font-size:11px; color:var(--text-dim);">Depends on domain only</div>
+        </div>
+        <div style="background:rgba(192,132,252,0.07); border:1px solid rgba(192,132,252,0.25); border-radius:var(--radius); padding:18px;">
+          <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--purple); margin-bottom:8px;">Infrastructure</div>
+          <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text);">Adapters</div>
+          <ul style="list-style:none; font-size:12px; color:var(--text-muted); line-height:2;">
+            <li style="display:flex; gap:6px;"><span style="color:var(--text-dim)">·</span><span><code>router.py</code> — FastAPI + error mapping</span></li>
+            <li style="display:flex; gap:6px;"><span style="color:var(--text-dim)">·</span><span><code>orm_models.py</code> — SQLAlchemy ORM</span></li>
+            <li style="display:flex; gap:6px;"><span style="color:var(--text-dim)">·</span><span><code>repository.py</code> — DB queries + mapper</span></li>
+            <li style="display:flex; gap:6px;"><span style="color:var(--text-dim)">·</span><span><code>schemas.py</code> — Pydantic DTOs</span></li>
+          </ul>
+          <div style="margin-top:10px; font-size:11px; color:var(--text-dim);">Depends on application + domain</div>
+        </div>
+      </div>
+
+      <!-- Dependency flow -->
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:28px;">
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-dim); margin-bottom:14px;">Dependency Flow</div>
+        <div style="display:flex; align-items:center; gap:0; flex-wrap:wrap; font-size:12px; font-family:var(--mono);">
+          <div style="background:rgba(192,132,252,0.1); border:1px solid rgba(192,132,252,0.3); border-radius:6px; padding:8px 14px; color:var(--purple);">infrastructure/</div>
+          <div style="padding:0 10px; color:var(--text-dim);">→</div>
+          <div style="background:rgba(108,140,255,0.1); border:1px solid rgba(108,140,255,0.3); border-radius:6px; padding:8px 14px; color:var(--accent);">application/</div>
+          <div style="padding:0 10px; color:var(--text-dim);">→</div>
+          <div style="background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); border-radius:6px; padding:8px 14px; color:var(--green);">domain/</div>
+          <div style="padding:0 20px; color:var(--text-dim); font-size:14px;">|</div>
+          <div style="background:rgba(34,211,238,0.1); border:1px solid rgba(34,211,238,0.3); border-radius:6px; padding:8px 14px; color:var(--cyan);">app/core/</div>
+          <div style="padding:0 10px; color:var(--text-dim);">→</div>
+          <div style="font-size:11px; color:var(--text-dim); font-style:italic;">all layers</div>
+        </div>
+        <div style="margin-top:10px; font-size:12px; color:var(--text-dim);">
+          <code style="color:var(--cyan);">app/core/</code> (config, database, storage) is shared infrastructure — any layer may import from it.
+          Domain is the only layer that imports from nothing outside standard Python.
+        </div>
+      </div>
+
+      <!-- Full module tree -->
+      <div style="background:#0b0d14; border:1px solid var(--border); border-radius:var(--radius-sm); padding:18px; font-family:var(--mono); font-size:12px; line-height:1.9; overflow-x:auto;">
+        <div style="color:var(--text-dim); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; margin-bottom:10px;">Module Tree</div>
+<span style="color:var(--text);">app/</span>
+<span style="color:var(--cyan);">├── core/</span>
+<span style="color:var(--text-muted);">│   ├── config.py</span>            <span style="color:var(--text-dim); font-style:italic;"># Settings dataclass, loads .env</span>
+<span style="color:var(--text-muted);">│   ├── database.py</span>          <span style="color:var(--text-dim); font-style:italic;"># SQLAlchemy engine, Base, get_db()</span>
+<span style="color:var(--text-muted);">│   └── storage/</span>
+<span style="color:var(--text-muted);">│       ├── client.py</span>         <span style="color:var(--text-dim); font-style:italic;"># StorageAdapter ABC + Local / S3 / R2 adapters</span>
+<span style="color:var(--text-muted);">│       └── exceptions.py</span>     <span style="color:var(--text-dim); font-style:italic;"># StorageError</span>
+<span style="color:var(--accent);">├── videos/</span>
+<span style="color:var(--green);">│   ├── domain/</span>
+<span style="color:var(--text-muted);">│   │   ├── models.py</span>         <span style="color:var(--text-dim); font-style:italic;"># Video, SubtitleTrackSummary dataclasses</span>
+<span style="color:var(--text-muted);">│   │   └── exceptions.py</span>     <span style="color:var(--text-dim); font-style:italic;"># VideoNotFoundError</span>
+<span style="color:var(--accent);">│   ├── application/</span>
+<span style="color:var(--text-muted);">│   │   └── use_cases.py</span>      <span style="color:var(--text-dim); font-style:italic;"># GetVideoWithTracks</span>
+<span style="color:var(--purple);">│   └── infrastructure/</span>
+<span style="color:var(--text-muted);">│       ├── orm_models.py</span>     <span style="color:var(--text-dim); font-style:italic;"># VideoORM (SQLAlchemy)</span>
+<span style="color:var(--text-muted);">│       ├── repository.py</span>     <span style="color:var(--text-dim); font-style:italic;"># VideoRepository → Video domain model</span>
+<span style="color:var(--text-muted);">│       ├── schemas.py</span>        <span style="color:var(--text-dim); font-style:italic;"># VideoOut Pydantic DTO</span>
+<span style="color:var(--text-muted);">│       └── router.py</span>         <span style="color:var(--text-dim); font-style:italic;"># GET /videos/{video_id}</span>
+<span style="color:var(--accent);">├── subtitles/</span>
+<span style="color:var(--green);">│   ├── domain/</span>
+<span style="color:var(--text-muted);">│   │   ├── models.py</span>         <span style="color:var(--text-dim); font-style:italic;"># SubtitleTrack dataclass</span>
+<span style="color:var(--text-muted);">│   │   ├── exceptions.py</span>     <span style="color:var(--text-dim); font-style:italic;"># TrackNotFoundError, InvalidSubtitleJSONError</span>
+<span style="color:var(--text-muted);">│   │   └── validator.py</span>      <span style="color:var(--text-dim); font-style:italic;"># validate_subtitle_json() — pure Python</span>
+<span style="color:var(--accent);">│   ├── application/</span>
+<span style="color:var(--text-muted);">│   │   └── use_cases.py</span>      <span style="color:var(--text-dim); font-style:italic;"># UploadSubtitle, DeleteSubtitle, GetSubtitleTrackUrl</span>
+<span style="color:var(--purple);">│   └── infrastructure/</span>
+<span style="color:var(--text-muted);">│       ├── orm_models.py</span>     <span style="color:var(--text-dim); font-style:italic;"># SubtitleTrackORM (SQLAlchemy)</span>
+<span style="color:var(--text-muted);">│       ├── repository.py</span>     <span style="color:var(--text-dim); font-style:italic;"># SubtitleRepository</span>
+<span style="color:var(--text-muted);">│       ├── schemas.py</span>        <span style="color:var(--text-dim); font-style:italic;"># SubtitleTrackOut Pydantic DTO</span>
+<span style="color:var(--text-muted);">│       └── router.py</span>         <span style="color:var(--text-dim); font-style:italic;"># POST / GET / DELETE /videos/{id}/subtitles</span>
+<span style="color:var(--accent);">└── youtube/</span>
+<span style="color:var(--green);">    ├── domain/</span>
+<span style="color:var(--text-muted);">    │   ├── models.py</span>         <span style="color:var(--text-dim); font-style:italic;"># AudioDownloadResult, TranscriptionResult, WordTimestamp</span>
+<span style="color:var(--text-muted);">    │   ├── exceptions.py</span>     <span style="color:var(--text-dim); font-style:italic;"># DownloadFailedError, TranscriptionFailedError</span>
+<span style="color:var(--text-muted);">    │   └── sentences.py</span>      <span style="color:var(--text-dim); font-style:italic;"># Sentence, SentenceWord, build_sentences()</span>
+<span style="color:var(--accent);">    ├── application/</span>
+<span style="color:var(--text-muted);">    │   ├── ports.py</span>           <span style="color:var(--text-dim); font-style:italic;"># AudioDownloader, Transcriber (typing.Protocol)</span>
+<span style="color:var(--text-muted);">    │   └── use_cases.py</span>      <span style="color:var(--text-dim); font-style:italic;"># TranslateYouTubeVideo, GetCachedTranscription</span>
+<span style="color:var(--purple);">    └── infrastructure/</span>
+<span style="color:var(--text-muted);">        ├── downloader.py</span>     <span style="color:var(--text-dim); font-style:italic;"># YtDlpAudioDownloader</span>
+<span style="color:var(--text-muted);">        ├── transcriber.py</span>    <span style="color:var(--text-dim); font-style:italic;"># WhisperTranscriber</span>
+<span style="color:var(--text-muted);">        ├── schemas.py</span>        <span style="color:var(--text-dim); font-style:italic;"># YouTubeTranslateRequest/Response, SentencesResponse</span>
+<span style="color:var(--text-muted);">        └── router.py</span>         <span style="color:var(--text-dim); font-style:italic;"># POST /youtube/translate, GET /youtube/transcribe/…/sentences</span>
+      </div>
+
+      <!-- ORM naming note -->
+      <div style="margin-top:16px; background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--yellow); border-radius:var(--radius-sm); padding:14px 16px; font-size:12px; color:var(--text-muted); line-height:1.7;">
+        <strong style="color:var(--text);">ORM naming convention</strong> — SQLAlchemy classes carry an
+        <code>ORM</code> suffix (<code>VideoORM</code>, <code>SubtitleTrackORM</code>) to avoid
+        collisions with the same-named domain <code>@dataclass</code> entities.
+        Repositories hold the only <code>_to_domain()</code> mapper that crosses between them.
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ── Dependencies ── -->
+    <div class="section" id="dependencies">
+      <div class="section-header">
+        <div class="section-icon green">📦</div>
+        <div class="section-title">
+          <h2>Dependencies</h2>
+          <p>Runtime and development packages — Python 3.9+</p>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px;">
+        <!-- Runtime -->
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
+          <div style="padding:10px 16px; background:var(--surface-2); border-bottom:1px solid var(--border); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted);">Runtime</div>
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:7px 14px; background:rgba(0,0,0,.15); color:var(--text-dim); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border);">Package</th>
+                <th style="text-align:left; padding:7px 14px; background:rgba(0,0,0,.15); color:var(--text-dim); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border);">Version</th>
+                <th style="text-align:left; padding:7px 14px; background:rgba(0,0,0,.15); color:var(--text-dim); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border);">Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">fastapi</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">0.115.12</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">Web framework, routing, DI</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">uvicorn[standard]</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">0.34.2</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">ASGI server</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">sqlalchemy</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">≥ 2.0</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">ORM, query builder</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">psycopg2-binary</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">≥ 2.9</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">PostgreSQL driver</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">alembic</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">≥ 1.13</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">DB migrations</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">openai</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">≥ 1.0.0</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">Whisper transcription API</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">yt-dlp</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">2025.3.31</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">YouTube audio download</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">boto3</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">≥ 1.34</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">S3 / Cloudflare R2 storage</td></tr>
+              <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">python-multipart</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">0.0.20</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">Multipart form uploads</td></tr>
+              <tr><td style="padding:7px 14px; font-family:var(--mono); color:var(--accent);">python-dotenv</td><td style="padding:7px 14px; font-family:var(--mono); color:var(--yellow);">≥ 1.0</td><td style="padding:7px 14px; color:var(--text-muted);">Loads .env into os.environ</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Dev + system -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
+            <div style="padding:10px 16px; background:var(--surface-2); border-bottom:1px solid var(--border); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted);">Dev</div>
+            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+              <tbody>
+                <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">pytest</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">≥ 8.0</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">Test runner</td></tr>
+                <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">pytest-asyncio</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">≥ 0.23</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">Async test support</td></tr>
+                <tr><td style="padding:7px 14px; font-family:var(--mono); color:var(--accent);">ruff</td><td style="padding:7px 14px; font-family:var(--mono); color:var(--yellow);">≥ 0.4</td><td style="padding:7px 14px; color:var(--text-muted);">Linter + import sorter</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
+            <div style="padding:10px 16px; background:var(--surface-2); border-bottom:1px solid var(--border); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted);">System (not in pyproject)</div>
+            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+              <tbody>
+                <tr><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--accent);">ffmpeg</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); font-family:var(--mono); color:var(--yellow);">any</td><td style="padding:7px 14px; border-bottom:1px solid rgba(46,51,80,.4); color:var(--text-muted);">Audio extraction (required by yt-dlp)</td></tr>
+                <tr><td style="padding:7px 14px; font-family:var(--mono); color:var(--accent);">PostgreSQL</td><td style="padding:7px 14px; font-family:var(--mono); color:var(--yellow);">≥ 13</td><td style="padding:7px 14px; color:var(--text-muted);">Database server</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Domain dep map -->
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; font-size:12px;">
+            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-dim); margin-bottom:12px;">Domain-layer imports</div>
+            <div style="font-family:var(--mono); line-height:2; color:var(--text-muted);">
+              <div><span style="color:var(--green);">domain/</span> <span style="color:var(--text-dim); font-size:11px;">→</span> <span style="color:var(--text-dim); font-style:italic;">stdlib + pydantic only</span></div>
+              <div><span style="color:var(--accent);">application/</span> <span style="color:var(--text-dim); font-size:11px;">→</span> <span style="color:var(--green);">domain/</span><span style="color:var(--text-dim);">, </span><span style="color:var(--cyan);">core/storage</span></div>
+              <div><span style="color:var(--purple);">infrastructure/</span> <span style="color:var(--text-dim); font-size:11px;">→</span> <span style="color:var(--accent);">application/</span><span style="color:var(--text-dim);">, </span><span style="color:var(--green);">domain/</span><span style="color:var(--text-dim);">, </span><span style="color:var(--cyan);">core/</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider" />
 
     <!-- ── Infrastructure ── -->
     <div class="section" id="infrastructure">

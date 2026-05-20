@@ -15,12 +15,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("lyrra")
 
-from app.config import settings
-from app.database import Base, engine
-from app.subtitles.models import SubtitleTrack  # noqa: F401 — registers model with Base
-from app.subtitles.router import router as subtitles_router
-from app.videos.router import router as videos_router
-from app.youtube.router import router as youtube_router
+from app.core.config import settings
+from app.core.database import Base, engine
+from app.subtitles.infrastructure.orm_models import SubtitleTrackORM  # noqa: F401 — registers model with Base
+from app.videos.infrastructure.orm_models import VideoORM  # noqa: F401 — registers model with Base
+from app.subtitles.infrastructure.router import router as subtitles_router
+from app.videos.infrastructure.router import router as videos_router
+from app.youtube.infrastructure.router import router as youtube_router
 
 
 @asynccontextmanager

@@ -13,7 +13,7 @@ class SubtitleTrackOut(BaseModel):
 
 
 class VideoOut(BaseModel):
-    id: int
+    id: str
     title: str
     duration_ms: Optional[int]
     source_url: Optional[str]
