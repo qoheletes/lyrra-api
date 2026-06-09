@@ -17,23 +17,15 @@ class WhisperTranscriber:
         source_language: Optional[str],
     ) -> TranscriptionResult:
         client = openai.OpenAI(api_key=settings.openai_api_key)
-        is_diarize_model = "diarize" in model_name
         try:
             with open(audio_path, "rb") as audio_file:
-                if is_diarize_model:
-                    response = client.audio.transcriptions.create(
-                        file=audio_file,
-                        model=model_name,
-                        response_format="json",
-                    )
-                else:
-                    response = client.audio.transcriptions.create(
-                        file=audio_file,
-                        model=model_name,
-                        response_format="verbose_json",
-                        timestamp_granularities=["word", "segment"],
-                    )
-        except (RuntimeError, openai.BadRequestError) as exc:
+                response = client.audio.transcriptions.create(
+                    file=audio_file,
+                    model=model_name,
+                    response_format="verbose_json",
+                    timestamp_granularities=["word", "segment"],
+                )
+        except (RuntimeError, openai.OpenAIError) as exc:
             raise TranscriptionFailedError(str(exc)) from exc
 
         words = [
