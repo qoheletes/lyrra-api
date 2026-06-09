@@ -9,10 +9,10 @@ from alembic import context
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.core.config import settings
-from app.core.database import Base
-import app.videos.infrastructure.orm_models  # noqa: F401 — register models with Base
-import app.subtitles.infrastructure.orm_models  # noqa: F401 — register models with Base
+from src.config import settings
+from src.database import Base
+import src.videos.models  # noqa: F401 — register models with Base
+import src.subtitles.models  # noqa: F401 — register models with Base
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

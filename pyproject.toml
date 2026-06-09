@@ -6,12 +6,12 @@ build-backend = "hatchling.build"
 name = "lyrra-api"
 version = "0.1.0"
 description = ""
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi==0.115.12",
     "openai>=1.0.0",
     "uvicorn[standard]==0.34.2",
-    "yt-dlp==2025.3.31",
+    "yt-dlp==2026.3.17",
     "python-multipart==0.0.20",
     "sqlalchemy>=2.0",
     "psycopg2-binary>=2.9",
@@ -28,14 +28,37 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["app"]
+packages = ["src"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade — modernize syntax
+    "B",    # flake8-bugbear — likely bugs & design issues
+    "C4",   # flake8-comprehensions — cleaner comprehensions
+    "SIM",  # flake8-simplify
+    "PIE",  # flake8-pie — misc lints
+    "RUF",  # ruff-specific rules
+    "TCH",  # flake8-type-checking — TYPE_CHECKING imports
+    "PT",   # flake8-pytest-style
+    "ERA",  # eradicate — commented-out code
+]
+ignore = [
+    "B008",   # FastAPI Depends() as default arg is intentional
+    "SIM108", # ternary vs if/else — readability is context-dependent
+    "UP007",  # X | Y union syntax requires Python 3.10+
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ERA001"]  # allow commented-out code in tests
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
