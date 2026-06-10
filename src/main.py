@@ -1,13 +1,10 @@
 import logging
-import os
 import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
-from src.config import settings
 from src.database import Base, engine
 from src.subtitles.models import SubtitleTrackORM  # noqa: F401 — registers model with Base
 from src.subtitles.router import router as subtitles_router
@@ -63,11 +60,6 @@ app.add_middleware(
 app.include_router(videos_router)
 app.include_router(subtitles_router)
 app.include_router(youtube_router)
-
-if settings.storage_backend == "local":
-    os.makedirs(settings.local_storage_path, exist_ok=True)
-    app.mount("/files", StaticFiles(directory=settings.local_storage_path), name="files")
-
 
 @app.get("/health")
 def healthcheck() -> dict[str, str]:

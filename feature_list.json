@@ -1,6 +1,6 @@
 {
-  "project": "replace-with-project-name",
-  "last_updated": "YYYY-MM-DD",
+  "project": "lyrra-api",
+  "last_updated": "2026-06-10",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -14,51 +14,23 @@
   },
   "features": [
     {
-      "id": "chat-001",
+      "id": "storage-001",
       "priority": 1,
-      "area": "chat",
-      "title": "Create a new conversation",
-      "user_visible_behavior": "A user can click New Chat and see a fresh empty conversation.",
-      "status": "not_started",
+      "area": "storage",
+      "title": "Store only to R2 (remove local and S3 storage backends)",
+      "user_visible_behavior": "All stored files (transcriptions, sentences, translations, subtitle tracks) are written to Cloudflare R2 only; the API never writes them to the local filesystem and no longer serves a local /files mount.",
+      "status": "passing",
       "verification": [
-        "Open the app.",
-        "Click New Chat.",
-        "Verify a new conversation appears in the sidebar.",
-        "Verify the main panel shows an empty conversation state."
+        "Run ./init.sh (pytest + ruff) — all checks pass.",
+        "grep src/ for LocalFileAdapter, S3Adapter, storage_backend, local_storage, StaticFiles — no matches.",
+        "tests/test_storage.py proves get_storage() returns R2Adapter and raises StorageError listing missing R2_* env vars."
       ],
-      "evidence": [],
-      "notes": ""
-    },
-    {
-      "id": "chat-002",
-      "priority": 2,
-      "area": "chat",
-      "title": "Send a message in the current conversation",
-      "user_visible_behavior": "A user can submit a message and see it appear in the active thread.",
-      "status": "not_started",
-      "verification": [
-        "Open an existing conversation.",
-        "Type a message into the input.",
-        "Submit the message.",
-        "Verify the new message appears in the thread."
+      "evidence": [
+        "2026-06-10: ./init.sh — 5 tests passed, ruff all checks passed, app boots with 12 routes.",
+        "2026-06-10: grep for removed symbols across src/, tests/, scripts/, alembic/ returned no matches.",
+        "GitHub issue: https://github.com/qoheletes/lyrra-api/issues/1"
       ],
-      "evidence": [],
-      "notes": ""
-    },
-    {
-      "id": "chat-003",
-      "priority": 3,
-      "area": "chat",
-      "title": "Persist the active conversation list",
-      "user_visible_behavior": "A user sees previously created conversations after restarting the app.",
-      "status": "not_started",
-      "verification": [
-        "Create two conversations.",
-        "Restart the app.",
-        "Verify both conversations still appear in the sidebar."
-      ],
-      "evidence": [],
-      "notes": ""
+      "notes": "R2 config is validated lazily in get_storage(), so the app still boots without R2_* env vars but any storage use fails with an explicit StorageError. Implemented on branch feature/r2-only-storage."
     }
   ]
 }
