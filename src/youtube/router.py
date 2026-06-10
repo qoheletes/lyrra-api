@@ -29,7 +29,6 @@ from src.youtube.service import (
     SearchYouTubeVideos,
     TranslateTranscription,
     TranslateYouTubeVideo,
-    build_sentences,
 )
 
 router = APIRouter(tags=["youtube"])
@@ -120,7 +119,7 @@ def get_sentences(video_id: str) -> SentencesResponse:
     return SentencesResponse(
         video_id=video_id,
         language=transcription.get("language"),
-        sentences=build_sentences(transcription),
+        sentences=transcription["sentences"],
     )
 
 

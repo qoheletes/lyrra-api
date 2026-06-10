@@ -3,9 +3,44 @@
 ## Current State
 
 **Last Updated:** 2026-06-10
-**Active Feature:** storage-001 — Store only to R2 (done, PR pending merge)
+**Active Feature:** storage-002 — Store only compressed sentence JSON (done, PR pending merge)
 
-## Status
+## Status (storage-002)
+
+### What's Done
+
+- [x] `StorageAdapter.upload()` / `R2Adapter.upload()` accept optional
+      `content_type` and `content_encoding`, forwarded to `put_object`.
+- [x] `src/youtube/service.py`: removed `_save_transcription` and the raw
+      `transcriptions/{video_id}.json` dump; the sentence payload
+      (`video_id`, `title`, `duration_ms`, `source_url`, `language`,
+      `sentences`) is now the only stored object, at
+      `transcriptions/{video_id}.json`, serialized compactly and
+      gzip-compressed (`Content-Encoding: gzip`, `Content-Type: application/json`).
+- [x] `GetCachedTranscription` reads + gunzips the sentence file and derives
+      the response (`text` joined from sentences, `words` flattened,
+      `segments: []`, `transcription_url` from `get_public_url`).
+- [x] `TranslateTranscription` reads the sentence payload and writes a
+      gzip-compressed translation at `transcriptions/{video_id}_translated_{lang}.json`.
+- [x] `GET /youtube/transcribe/{video_id}/sentences` returns stored sentences
+      directly instead of rebuilding with `build_sentences`.
+- [x] Added `tests/test_sentence_storage.py` (5 tests, fake storage adapter).
+- [x] GitHub issue #3; implemented on branch `feature/sentence-json-storage`.
+
+### Verification Evidence
+
+- `uv run pytest` → 10 passed; `uv run ruff check src tests` → all checks passed
+
+### Notes / Risks
+
+- Speaker segments are no longer persisted; cached translate responses return
+  `segments: []` (fresh transcriptions still include them in the API response).
+- Existing bucket objects (`*_sentences.json`, old raw `{video_id}.json`) are
+  orphaned — old raw files will fail to parse as sentence payloads only if a
+  stale `{video_id}.json` raw dump exists for a video (it would lack
+  `sentences`); re-transcribing overwrites it. No migration script written.
+
+## Status (storage-001)
 
 ### What's Done
 

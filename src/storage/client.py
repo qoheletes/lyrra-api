@@ -8,7 +8,13 @@ from src.storage.exceptions import StorageError
 
 class StorageAdapter(ABC):
     @abstractmethod
-    def upload(self, key: str, data: bytes) -> str:
+    def upload(
+        self,
+        key: str,
+        data: bytes,
+        content_type: str | None = None,
+        content_encoding: str | None = None,
+    ) -> str:
         """Upload data and return the public URL."""
 
     @abstractmethod
@@ -43,8 +49,19 @@ class R2Adapter(StorageAdapter):
         self._bucket = bucket
         self._public_url = public_url.rstrip("/")
 
-    def upload(self, key: str, data: bytes) -> str:
-        self._s3.put_object(Bucket=self._bucket, Key=key, Body=data)
+    def upload(
+        self,
+        key: str,
+        data: bytes,
+        content_type: str | None = None,
+        content_encoding: str | None = None,
+    ) -> str:
+        extra: dict[str, str] = {}
+        if content_type:
+            extra["ContentType"] = content_type
+        if content_encoding:
+            extra["ContentEncoding"] = content_encoding
+        self._s3.put_object(Bucket=self._bucket, Key=key, Body=data, **extra)
         return self.get_public_url(key)
 
     def download(self, key: str) -> bytes | None:

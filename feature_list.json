@@ -31,6 +31,23 @@
         "GitHub issue: https://github.com/qoheletes/lyrra-api/issues/1"
       ],
       "notes": "R2 config is validated lazily in get_storage(), so the app still boots without R2_* env vars but any storage use fails with an explicit StorageError. Implemented on branch feature/r2-only-storage."
+    },
+    {
+      "id": "storage-002",
+      "priority": 2,
+      "area": "storage",
+      "title": "Store only compressed sentence JSON as {video_id}.json",
+      "user_visible_behavior": "Transcribing a video stores exactly one object in R2: a gzip-compressed sentence JSON at transcriptions/{video_id}.json (Content-Type: application/json, Content-Encoding: gzip, so the public URL still serves plain JSON to HTTP clients). No raw transcription dump is stored; cached transcribe/sentences/translate responses are derived from the sentence payload.",
+      "status": "passing",
+      "verification": [
+        "Run ./init.sh (pytest + ruff) — all checks pass.",
+        "tests/test_sentence_storage.py proves: single object per transcription at transcriptions/{video_id}.json, bytes are gzip, decompressed payload contains only sentence JSON (no top-level text/words/segments), cached reads round-trip, translation reads/writes compressed sentence JSON."
+      ],
+      "evidence": [
+        "2026-06-10: uv run pytest — 10 passed; uv run ruff check src tests — all checks passed.",
+        "GitHub issue: https://github.com/qoheletes/lyrra-api/issues/3"
+      ],
+      "notes": "gzip chosen over zstd/brotli: stdlib, and via HTTP Content-Encoding every browser/client decodes transparently while the key keeps the .json name. Speaker segments are no longer cached (cached responses return segments: []). Old *_sentences.json and raw {video_id}.json objects in the bucket are orphaned, not migrated. Implemented on branch feature/sentence-json-storage."
     }
   ]
 }
