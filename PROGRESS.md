@@ -2,8 +2,32 @@
 
 ## Current State
 
-**Last Updated:** 2026-06-10
-**Active Feature:** storage-002 — Store only compressed sentence JSON (done, PR pending merge)
+**Last Updated:** 2026-06-11
+**Active Feature:** storage-003 — Per-video directory storage (done, PR pending merge)
+
+## Status (storage-003)
+
+### What's Done
+
+- [x] `_sentences_key()` → `transcriptions/{video_id}/transcription.json`.
+- [x] `_translation_key()` → `transcriptions/{video_id}/{lang}.json`
+      (e.g. `transcriptions/{video_id}/es.json`).
+- [x] Updated `tests/test_sentence_storage.py` expected keys for the new layout.
+- [x] Updated `src/youtube/ARCHITECTURE.md` storage-key references (Transcription,
+      new Translation entry, example dialogue).
+- [x] GitHub issue #5; implemented on branch `feature/per-video-directory-storage`
+      (cut from `feature/sentence-json-storage`).
+
+### Verification Evidence
+
+- `uv run pytest` → 10 passed; `uv run ruff check src tests` → all checks passed.
+
+### Notes / Risks
+
+- Payloads and gzip/Content-Encoding behavior are unchanged — only the object
+  keys moved into a per-video directory.
+- Public URL paths change; old flat objects (`transcriptions/{video_id}.json`,
+  `*_translated_*.json`) are orphaned. No migration script.
 
 ## Status (storage-002)
 

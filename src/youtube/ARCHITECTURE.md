@@ -37,9 +37,9 @@ The ports/use cases live in `service.py` and depend only on the Protocols; concr
 
 **Sentence** — A contiguous run of words that form a natural sentence. Derived from a transcription by `build_sentences`; a Pydantic model in `schemas.py`, not stored in the domain data classes.
 
-**Transcription** — The serialized JSON blob stored in object storage at `transcriptions/{video_id}.json`. Contains everything from `AudioDownloadResult` and `TranscriptionResult`. This is the cache unit — a hit on this key skips download and transcription entirely.
+**Transcription** — The gzip-compressed sentence JSON stored in object storage at `transcriptions/{video_id}/transcription.json`. Derived from `AudioDownloadResult` and `TranscriptionResult` via `build_sentences`. This is the cache unit — a hit on this key skips download and transcription entirely.
 
-**SentenceList** — A second JSON blob stored at `transcriptions/{video_id}_sentences.json`, derived from the `Transcription` in the same use-case pass.
+**Translation** — A per-language gzip-compressed JSON stored alongside the transcription at `transcriptions/{video_id}/{lang}.json` (e.g. `transcriptions/{video_id}/es.json`), written by `TranslateTranscription`. All of a video's artifacts share the `transcriptions/{video_id}/` directory.
 
 **AudioDownloader / Transcriber** (ports) — Protocols in `service.py` that `TranslateYouTubeVideo` depends on. Concrete implementations are `YtDlpAudioDownloader` and `WhisperTranscriber` in `client.py`.
 
@@ -51,7 +51,7 @@ The ports/use cases live in `service.py` and depend only on the Protocols; concr
 
 > **Dev**: Does `GetCachedTranscription` check the database?
 >
-> **Domain expert**: No — the YouTube domain has no database. A `Transcription` is a JSON file in object storage. The cache key is `transcriptions/{video_id}.json`. If that file exists, we return it; otherwise we run the full download-and-transcribe flow.
+> **Domain expert**: No — the YouTube domain has no database. A `Transcription` is a JSON file in object storage. The cache key is `transcriptions/{video_id}/transcription.json`. If that file exists, we return it; otherwise we run the full download-and-transcribe flow.
 >
 > **Dev**: What about the `Video` record in Postgres?
 >
