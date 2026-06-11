@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 import re
 from typing import TYPE_CHECKING, Any, Protocol
@@ -46,20 +47,29 @@ class YouTubeSearcher(Protocol):
 
 
 # ---------------------------------------------------------------------------
-# Storage keys
+# Storage keys and serialization
 # ---------------------------------------------------------------------------
 
-
-def _transcription_key(video_id: str) -> str:
-    return f"transcriptions/{video_id}.json"
+_GZIP_MAGIC = b"\x1f\x8b"
 
 
 def _sentences_key(video_id: str) -> str:
-    return f"transcriptions/{video_id}_sentences.json"
+    return f"transcriptions/{video_id}.json"
 
 
 def _translation_key(video_id: str, target_language: str) -> str:
     return f"transcriptions/{video_id}_translated_{target_language}.json"
+
+
+def _compress_json(payload: dict[str, Any]) -> bytes:
+    # mtime=0 keeps the gzip output deterministic for identical payloads
+    return gzip.compress(json.dumps(payload, separators=(",", ":")).encode(), mtime=0)
+
+
+def _decompress_json(data: bytes) -> dict[str, Any]:
+    if data[:2] == _GZIP_MAGIC:
+        data = gzip.decompress(data)
+    return json.loads(data)
 
 
 # ---------------------------------------------------------------------------
@@ -131,10 +141,24 @@ class GetCachedTranscription:
         self._storage = storage
 
     def execute(self, video_id: str) -> dict[str, Any] | None:
-        data = self._storage.download(_transcription_key(video_id))
+        key = _sentences_key(video_id)
+        data = self._storage.download(key)
         if data is None:
             return None
-        return json.loads(data)
+        payload = _decompress_json(data)
+        sentences = payload.get("sentences", [])
+        return {
+            "video_id": payload["video_id"],
+            "title": payload.get("title", ""),
+            "duration_ms": payload.get("duration_ms"),
+            "source_url": payload.get("source_url"),
+            "language": payload.get("language"),
+            "text": " ".join(s["text"] for s in sentences),
+            "transcription_url": self._storage.get_public_url(key),
+            "words": [w for s in sentences for w in s["words"]],
+            "segments": [],
+            "sentences": sentences,
+        }
 
 
 class TranslateYouTubeVideo:
@@ -157,8 +181,7 @@ class TranslateYouTubeVideo:
     ) -> dict[str, Any]:
         audio = self._downloader.download(youtube_url, output_dir)
         transcription = self._transcriber.transcribe(audio.audio_path, model_name, source_language)
-        transcription_url = self._save_transcription(audio, transcription)
-        self._save_sentences(audio.video_id, transcription)
+        transcription_url = self._save_sentences(audio, transcription)
         return {
             "video_id": audio.video_id,
             "title": audio.title,
@@ -176,28 +199,7 @@ class TranslateYouTubeVideo:
             ],
         }
 
-    def _save_transcription(self, audio: Any, transcription: TranscriptionResult) -> str:
-        payload = {
-            "video_id": audio.video_id,
-            "title": audio.title,
-            "duration_ms": audio.duration_ms,
-            "source_url": audio.source_url,
-            "language": transcription.language,
-            "text": transcription.text,
-            "words": [
-                {"word": w.word, "start": w.start, "end": w.end} for w in transcription.words
-            ],
-            "segments": [
-                {"speaker": s.speaker, "text": s.text, "start": s.start, "end": s.end}
-                for s in transcription.segments
-            ],
-        }
-        key = _transcription_key(audio.video_id)
-        url = self._storage.upload(key, json.dumps(payload, indent=2).encode())
-        print(f"[transcribe] saved to {url}")
-        return url
-
-    def _save_sentences(self, video_id: str, transcription: TranscriptionResult) -> None:
+    def _save_sentences(self, audio: Any, transcription: TranscriptionResult) -> str:
         raw = {
             "text": transcription.text,
             "words": [
@@ -206,7 +208,10 @@ class TranslateYouTubeVideo:
         }
         sentences = build_sentences(raw)
         payload = {
-            "video_id": video_id,
+            "video_id": audio.video_id,
+            "title": audio.title,
+            "duration_ms": audio.duration_ms,
+            "source_url": audio.source_url,
             "language": transcription.language,
             "sentences": [
                 {
@@ -218,32 +223,44 @@ class TranslateYouTubeVideo:
                 for s in sentences
             ],
         }
-        key = _sentences_key(video_id)
-        url = self._storage.upload(key, json.dumps(payload, indent=2).encode())
+        key = _sentences_key(audio.video_id)
+        url = self._storage.upload(
+            key,
+            _compress_json(payload),
+            content_type="application/json",
+            content_encoding="gzip",
+        )
         print(f"[transcribe] sentences saved to {url}")
+        return url
 
 
 class TranslateTranscription:
-    """Loads a cached transcription from storage and saves a translated version."""
+    """Loads the cached sentence payload from storage and saves a translated version."""
 
     def __init__(self, storage: StorageAdapter, translator: Translator) -> None:
         self._storage = storage
         self._translator = translator
 
     def execute(self, video_id: str, target_language: str) -> None:
-        data = self._storage.download(_transcription_key(video_id))
+        data = self._storage.download(_sentences_key(video_id))
         if data is None:
             print(f"[translate] no cached transcription for {video_id!r}, skipping")
             return
-        transcription = json.loads(data)
-        translated_text = self._translator.translate(transcription["text"], target_language)
+        sentences_payload = _decompress_json(data)
+        text = " ".join(s["text"] for s in sentences_payload.get("sentences", []))
+        translated_text = self._translator.translate(text, target_language)
         payload = {
-            **transcription,
+            **sentences_payload,
             "translated_text": translated_text,
             "target_language": target_language,
         }
         key = _translation_key(video_id, target_language)
-        url = self._storage.upload(key, json.dumps(payload, indent=2).encode())
+        url = self._storage.upload(
+            key,
+            _compress_json(payload),
+            content_type="application/json",
+            content_encoding="gzip",
+        )
         print(f"[translate] saved {target_language!r} translation to {url}")
 
 
