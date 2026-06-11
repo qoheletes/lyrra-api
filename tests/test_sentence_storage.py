@@ -83,12 +83,13 @@ def test_transcribe_stores_single_compressed_sentence_file():
     storage = FakeStorage()
     _transcribe(storage)
 
-    assert list(storage.objects) == ["transcriptions/vid123.json"]
+    assert list(storage.objects) == ["transcriptions/vid123/transcription.json"]
     upload = storage.uploads[0]
     assert upload["content_type"] == "application/json"
     assert upload["content_encoding"] == "gzip"
 
-    payload = json.loads(gzip.decompress(storage.objects["transcriptions/vid123.json"]))
+    raw = storage.objects["transcriptions/vid123/transcription.json"]
+    payload = json.loads(gzip.decompress(raw))
     assert payload["video_id"] == "vid123"
     assert payload["title"] == "A Test Video"
     assert payload["language"] == "en"
@@ -124,7 +125,7 @@ def test_translate_transcription_reads_and_writes_compressed_sentence_json():
 
     TranslateTranscription(storage, FakeTranslator()).execute("vid123", "es")
 
-    key = "transcriptions/vid123_translated_es.json"
+    key = "transcriptions/vid123/es.json"
     assert key in storage.objects
     payload = json.loads(gzip.decompress(storage.objects[key]))
     assert payload["translated_text"] == "[es] Hello world. This is fine."
