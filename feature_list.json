@@ -1,6 +1,6 @@
 {
   "project": "lyrra-api",
-  "last_updated": "2026-06-10",
+  "last_updated": "2026-06-11",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -48,6 +48,23 @@
         "GitHub issue: https://github.com/qoheletes/lyrra-api/issues/3"
       ],
       "notes": "gzip chosen over zstd/brotli: stdlib, and via HTTP Content-Encoding every browser/client decodes transparently while the key keeps the .json name. Speaker segments are no longer cached (cached responses return segments: []). Old *_sentences.json and raw {video_id}.json objects in the bucket are orphaned, not migrated. Implemented on branch feature/sentence-json-storage."
+    },
+    {
+      "id": "storage-003",
+      "priority": 3,
+      "area": "storage",
+      "title": "Store each video's artifacts in a per-video directory ({video_id}/)",
+      "user_visible_behavior": "All of a video's stored objects live under transcriptions/{video_id}/: the gzip-compressed sentence JSON at transcriptions/{video_id}/transcription.json and each translation at transcriptions/{video_id}/{lang}.json (e.g. transcriptions/{video_id}/es.json). Replaces the previous flat keys (transcriptions/{video_id}.json and transcriptions/{video_id}_translated_{lang}.json).",
+      "status": "passing",
+      "verification": [
+        "Run ./init.sh (pytest + ruff) — all checks pass.",
+        "tests/test_sentence_storage.py proves: transcribe stores exactly one object at transcriptions/{video_id}/transcription.json, translation writes transcriptions/{video_id}/{lang}.json, cached reads round-trip from the new key."
+      ],
+      "evidence": [
+        "2026-06-11: uv run pytest — 10 passed; uv run ruff check src tests — all checks passed.",
+        "GitHub issue: https://github.com/qoheletes/lyrra-api/issues/5"
+      ],
+      "notes": "Only the storage key functions (_sentences_key, _translation_key) changed; payloads and gzip/Content-Encoding behavior are unchanged. Public URL paths change, so old flat objects in the bucket are orphaned (no migration). Implemented on branch feature/per-video-directory-storage."
     }
   ]
 }
