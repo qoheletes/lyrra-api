@@ -54,11 +54,11 @@ _GZIP_MAGIC = b"\x1f\x8b"
 
 
 def _sentences_key(video_id: str) -> str:
-    return f"transcriptions/{video_id}.json"
+    return f"transcriptions/{video_id}/transcription.json"
 
 
 def _translation_key(video_id: str, target_language: str) -> str:
-    return f"transcriptions/{video_id}_translated_{target_language}.json"
+    return f"transcriptions/{video_id}/{target_language}.json"
 
 
 def _compress_json(payload: dict[str, Any]) -> bytes:
