@@ -161,7 +161,7 @@ def test_sentences_endpoint_returns_stored_sentences_after_transcribe(e2e):
     client, _, _, _, _ = e2e
 
     client.post("/youtube/translate", json={"youtube_url": YOUTUBE_URL})
-    resp = client.get(f"/youtube/transcribe/{VIDEO_ID}/sentences")
+    resp = client.get(f"/youtube/{VIDEO_ID}/transcript")
 
     assert resp.status_code == 200
     body = resp.json()
@@ -179,7 +179,7 @@ def test_sentences_endpoint_returns_stored_sentences_after_transcribe(e2e):
 def test_sentences_endpoint_404_when_not_transcribed(e2e):
     client, _, _, _, _ = e2e
 
-    resp = client.get("/youtube/transcribe/unknownvid/sentences")
+    resp = client.get("/youtube/unknownvid/transcript")
 
     assert resp.status_code == 404
     assert "unknownvid" in resp.json()["detail"]

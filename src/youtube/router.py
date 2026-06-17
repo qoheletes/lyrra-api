@@ -109,7 +109,7 @@ def search_youtube(
     )
 
 
-@router.get("/youtube/transcribe/{video_id}/sentences", response_model=SentencesResponse)
+@router.get("/youtube/{video_id}/transcript", response_model=SentencesResponse)
 def get_sentences(video_id: str) -> SentencesResponse:
     transcription = get_cached_transcription(video_id)
     if transcription is None:
