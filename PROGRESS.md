@@ -2,6 +2,35 @@
 
 ## Current State
 
+**Last Updated:** 2026-06-17
+**Active Feature:** youtube-001 — Rename sentences route to GET /youtube/{video_id}/transcript (done, PR pending)
+
+## Status (youtube-001)
+
+### What's Done
+
+- [x] Renamed route `GET /youtube/transcribe/{video_id}/sentences` →
+      `GET /youtube/{video_id}/transcript` in `src/youtube/router.py`.
+- [x] Updated the two call sites in `tests/test_transcribe_e2e.py` (200 + 404 cases).
+- [x] Response schema (`SentencesResponse`, `sentences` field) unchanged — path only.
+- [x] GitHub issue #8; implemented on branch `feature/clarify-transcript-route`.
+
+### Verification Evidence
+
+- `uv run pytest` → 15 passed; `uv run ruff check src tests` → all checks passed.
+- App route table lists `GET /youtube/{video_id}/transcript`; old path absent.
+- No routing conflict with `/youtube/search` (single segment) or `/youtube/translate` (POST).
+
+### Notes / Risks
+
+- Scope was the URL path only. Handler name `get_sentences`, schema/field names,
+  storage keys, and OpenAPI docs were intentionally left unchanged.
+- Breaking change for any client calling the old path; no redirect/alias kept.
+
+---
+
+## Status (storage-003)
+
 **Last Updated:** 2026-06-11
 **Active Feature:** storage-003 — Per-video directory storage (done, PR pending merge)
 

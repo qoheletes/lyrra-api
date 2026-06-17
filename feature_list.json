@@ -1,6 +1,6 @@
 {
   "project": "lyrra-api",
-  "last_updated": "2026-06-11",
+  "last_updated": "2026-06-17",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -65,6 +65,25 @@
         "GitHub issue: https://github.com/qoheletes/lyrra-api/issues/5"
       ],
       "notes": "Only the storage key functions (_sentences_key, _translation_key) changed; payloads and gzip/Content-Encoding behavior are unchanged. Public URL paths change, so old flat objects in the bucket are orphaned (no migration). Implemented on branch feature/per-video-directory-storage."
+    },
+    {
+      "id": "youtube-001",
+      "priority": 4,
+      "area": "youtube",
+      "title": "Rename sentences route to GET /youtube/{video_id}/transcript for clarity",
+      "user_visible_behavior": "The cached transcript is fetched at GET /youtube/{video_id}/transcript (200 with the sentence payload, 404 when uncached). The previous path GET /youtube/transcribe/{video_id}/sentences is no longer registered. The response body (SentencesResponse, with its sentences field) is unchanged.",
+      "status": "passing",
+      "verification": [
+        "Run ./init.sh (pytest + ruff) — all checks pass.",
+        "App route table lists GET /youtube/{video_id}/transcript and no longer lists the old transcribe/.../sentences path.",
+        "tests/test_transcribe_e2e.py exercises the new path for both the 200 (after transcribe) and 404 (uncached) cases."
+      ],
+      "evidence": [
+        "2026-06-17: uv run pytest — 15 passed; uv run ruff check src tests — all checks passed.",
+        "2026-06-17: app route table shows GET /youtube/{video_id}/transcript (old path absent).",
+        "GitHub issue: https://github.com/qoheletes/lyrra-api/issues/8"
+      ],
+      "notes": "Scope was the URL path only. Handler name (get_sentences), schema/field names (SentencesResponse.sentences), storage keys, and OpenAPI docs were intentionally left unchanged. Implemented on branch feature/clarify-transcript-route."
     }
   ]
 }
