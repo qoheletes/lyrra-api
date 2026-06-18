@@ -17,6 +17,11 @@ class Settings:
     openai_api_key: str = field(default_factory=lambda: os.environ["OPENAI_API_KEY"])
     youtube_api_key: str = field(default_factory=lambda: os.environ["YOUTUBE_API_KEY"])
     yt_dlp_cookies_file: str = field(default_factory=lambda: os.getenv("YT_DLP_COOKIES_FILE", ""))
+    jwt_secret: str = field(default_factory=lambda: os.environ["JWT_SECRET"])
+    jwt_alg: str = field(default_factory=lambda: os.getenv("JWT_ALG", "HS256"))
+    access_token_ttl_min: int = field(
+        default_factory=lambda: int(os.getenv("ACCESS_TOKEN_TTL_MIN", "60"))
+    )
 
 
 settings = Settings()
