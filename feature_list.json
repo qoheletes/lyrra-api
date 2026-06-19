@@ -1,6 +1,6 @@
 {
   "project": "lyrra-api",
-  "last_updated": "2026-06-17",
+  "last_updated": "2026-06-18",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -84,6 +84,25 @@
         "GitHub issue: https://github.com/qoheletes/lyrra-api/issues/8"
       ],
       "notes": "Scope was the URL path only. Handler name (get_sentences), schema/field names (SentencesResponse.sentences), storage keys, and OpenAPI docs were intentionally left unchanged. Implemented on branch feature/clarify-transcript-route."
+    },
+    {
+      "id": "auth-001",
+      "priority": 5,
+      "area": "auth",
+      "title": "Email/password identity: register, login (JWT), and /me",
+      "user_visible_behavior": "The API supports email/password identity backed by a JWT bearer token. POST /auth/register creates a user from {email, password}, returning 201 with the created user (id, email, created_at) and no token (409 on duplicate email). POST /auth/login verifies credentials and returns {access_token, token_type: \"bearer\"} (PyJWT HS256, carrying the user id and an exp; 401 on bad credentials). GET /auth/me returns the current user for a valid Authorization: Bearer token (401 when missing/invalid/expired). Existing youtube/videos/subtitles routes stay open; password_hash never appears in any response.",
+      "status": "passing",
+      "verification": [
+        "Run ./init.sh (pytest + ruff) — all checks pass.",
+        "tests/test_auth.py proves: register returns 201 with the user and no token; duplicate email returns 409; login returns a bearer token; bad credentials return 401; /me returns the user for a valid token and 401 for missing/invalid/expired tokens.",
+        "App route table lists POST /auth/register, POST /auth/login, GET /auth/me; no response body contains password_hash."
+      ],
+      "evidence": [
+        "2026-06-18: ./init.sh — app boots (15 routes), uv run pytest — 25 passed, uv run ruff check src tests — all checks passed.",
+        "2026-06-18: app route table shows POST /auth/register, POST /auth/login, GET /auth/me; tests assert password_hash absent from every response body.",
+        "GitHub issue: https://github.com/qoheletes/lyrra-api/issues/10"
+      ],
+      "notes": "Approach chosen in planning meeting; see .claude/meetings/auth-001.md. Option A (lean stateless access JWT): new src/auth/ package + user table via Alembic, bcrypt hashing, PyJWT HS256 access token, sync SQLAlchemy to match existing areas. register returns the user (no auto-login token). UserORM uses a BigInteger autoincrement PK (Integer variant on SQLite so tests run without Postgres). Critic review caught: password max_length capped at 72 (bcrypt's byte limit — over-long passwords now 422 instead of a 500), and three ruff failures the implementation had been left with (TC002 Session import, RUF100 unused noqa, N806 local var name). Refresh tokens, logout/revocation, and enforcing auth on existing routes are deliberate out-of-scope follow-ups. Implemented on branch feature/email-password-auth."
     }
   ]
 }

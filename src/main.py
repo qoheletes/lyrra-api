@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.auth.models import UserORM  # noqa: F401 — registers model with Base
+from src.auth.router import router as auth_router
 from src.database import Base, engine
 from src.subtitles.models import SubtitleTrackORM  # noqa: F401 — registers model with Base
 from src.subtitles.router import router as subtitles_router
@@ -57,6 +59,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(videos_router)
 app.include_router(subtitles_router)
 app.include_router(youtube_router)

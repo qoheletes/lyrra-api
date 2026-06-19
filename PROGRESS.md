@@ -2,8 +2,60 @@
 
 ## Current State
 
-**Last Updated:** 2026-06-17
-**Active Feature:** youtube-001 — Rename sentences route to GET /youtube/{video_id}/transcript (done, PR pending)
+**Last Updated:** 2026-06-18
+**Active Feature:** auth-001 — Email/password identity (done, PR pending merge).
+
+## Status (auth-001)
+
+**Last Updated:** 2026-06-18
+**Status:** `passing` — implemented, verified, Critic-approved; PR open for human merge.
+
+### What's Done
+
+- [x] **Option A — lean stateless access JWT.** New `src/auth/` package (sync SQLAlchemy,
+      mirroring the `videos` area): `models.py` (`UserORM`, table `user`), `security.py`
+      (bcrypt hash/verify, PyJWT HS256 issue/decode), `schemas.py`, `service.py`
+      (`create_user`/`authenticate`/`get_user_by_id`), `exceptions.py`, `router.py`,
+      `dependencies.py` (`get_current_user`).
+- [x] Endpoints: `POST /auth/register` (201 → `UserOut`, **no token**, 409 on dup email),
+      `POST /auth/login` (→ `{access_token, token_type: "bearer"}`, 401 on bad creds),
+      `GET /auth/me` (Bearer → current user, 401 missing/invalid/expired).
+- [x] `pyjwt` + `bcrypt` + `pydantic[email]` deps; JWT settings in `src/config.py`;
+      `JWT_SECRET` default in `tests/conftest.py`.
+- [x] Alembic migration `e704940455dc_create_user.py` (down_revision `82a4b8dc2f2d`).
+- [x] Router + `UserORM` registered in `src/main.py`.
+- [x] `tests/test_auth.py` (11 tests) — SQLite in-memory + `get_db` override so tests need no
+      live Postgres (mirrors the `test_transcribe_e2e` no-lifespan pattern).
+- [x] GitHub issue #10; implemented on branch `feature/email-password-auth`.
+
+### Verification Evidence
+
+- `./init.sh` → app boots (15 routes), `uv run pytest` → **25 passed**,
+  `uv run ruff check src tests` → all checks passed.
+- Route table lists `POST /auth/register`, `POST /auth/login`, `GET /auth/me`;
+  tests assert `password_hash` is absent from every response body.
+
+### Review fixes (Critic pass)
+
+- **bcrypt 72-byte limit:** `password` `max_length` lowered 128 → 72 so an over-long password
+  returns a clean **422** instead of bcrypt raising a 500; added a regression test.
+- Cleared three ruff failures the implementation had been left with: TC002 (move `Session`
+  into a `TYPE_CHECKING` block in `service.py`), RUF100 (drop unused `# noqa: F401` —
+  `UserORM` is referenced), N806 (rename local `TestingSession` → `session_factory`).
+
+### Notes / Risks
+
+- `user` is a reserved word in Postgres (SQLAlchemy quotes it); the Alembic migration must be
+  applied for real Postgres deploys — tests use SQLite + `create_all`, so they don't exercise it.
+- `JWT_SECRET` in tests is short (triggers PyJWT's `InsecureKeyLengthWarning`); deployment must
+  set a real ≥32-byte secret.
+- `max_length=72` counts characters, not bytes; an all-multibyte 72-char password could still
+  exceed 72 bytes. Acceptable edge for this lean slice; revisit if non-ASCII passwords matter.
+- Sync DB layer deviates from `docs/auth-and-database.md`'s async target — accepted, matches
+  existing code; async migration deferred project-wide.
+- Out of scope (follow-ups): refresh tokens, logout/revocation, enforcing auth on existing routes.
+
+---
 
 ## Status (youtube-001)
 
