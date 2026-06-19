@@ -1,0 +1,23 @@
+{
+  "skill_name": "feature-planning-meeting",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I want to add rate limiting to the YouTube transcript endpoints so a single client can't hammer them. Help me figure out the best way to build this.",
+      "expected_output": "A planning meeting: clarifies goal/scope, presents 2-3 distinct rate-limiting approaches grounded in the FastAPI codebase with tradeoffs and a recommendation; on commit writes .claude/meetings/<id>.md and registers the feature in feature_list.json + PROGRESS.md.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "We need to let users delete a video's stored transcript and all its translations from R2. How should we implement that?",
+      "expected_output": "A planning meeting in the storage area: clarifies behavior (which keys under transcriptions/{video_id}/ get removed, endpoint shape), 2-3 distinct approaches with tradeoffs and a recommendation; records decision and updates harness files.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Let's plan out adding a /youtube/{video_id}/summary endpoint that returns an AI-generated summary of the transcript.",
+      "expected_output": "A planning meeting: clarifies scope, presents 2-3 distinct approaches (e.g. sync vs background, caching, model choice) grounded in existing youtube router/storage patterns with tradeoffs and a recommendation; records decision and updates harness files.",
+      "files": []
+    }
+  ]
+}

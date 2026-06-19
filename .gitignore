@@ -48,3 +48,6 @@ gcloud/
 # Logs
 *.log
 logs/
+
+# Skill-development eval scratch (skill-creator workspace output)
+.claude/skills/feature-planning-meeting-workspace/
